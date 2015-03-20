@@ -52,6 +52,11 @@ if ARGV.count == 0 then
   ARGV << '*'
 end
 
+status = {
+  true  => '  OK  ',
+  false => ' FAIL ',
+}
+
 ARGV.each do |cn|
   filter = base_filter & Net::LDAP::Filter.eq('cn', cn)
   ldap.search(filter: filter) do |entry|
@@ -66,17 +71,12 @@ ARGV.each do |cn|
       failures += 1
     end
 
-    status = {
-      true  => '  OK  ',
-      false => ' FAIL ',
-    }
-
     puts "[%s] %s %s" % [status[valid], id, valid ? '': "(#{trust_store.error_string})"]
   end
 end
 
 rate = if successes + failures > 0 then
-         100*successes/(successes + failures)
+         100 * successes / (successes + failures)
        else
          0
        end
