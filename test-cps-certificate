@@ -1,0 +1,83 @@
+#!/usr/bin/env ruby
+
+require 'optparse'
+require 'openssl'
+require 'net/ldap'
+
+options = {
+  trust_store: 'CERT-CPS2ter.crt',
+  search: 'cn',
+  filters: {},
+}
+
+ldap_options = {
+  host: 'annuaire.gip-cps.fr',
+  port: 389,
+  base: 'o=GIP-CPS,c=fr',
+  auth: { method: :anonymous },
+}
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: #{$0} [options] CN..."
+
+  opts.separator('')
+  opts.separator('Available options:')
+  opts.on('-t', '--test', 'Search and fetch certificates from the TEST directory') do
+    options[:trust_store] = 'CERT-CPS2ter-TEST.crt'
+    ldap_options[:base] = 'o=TEST,c=fr'
+  end
+  opts.on('-g', '--gn=GIVEN_NAME', 'Filter on given name') do |v|
+    options[:filters]['givenName'] = v
+  end
+  opts.on('-s', '--sn=SURNAME', 'Filter on surname') do |v|
+    options[:filters]['sn'] = v
+  end
+end.parse!
+
+trust_store = OpenSSL::X509::Store.new
+trust_store.add_file(options[:trust_store])
+
+successes = 0
+failures = 0
+
+ldap = Net::LDAP.new(ldap_options)
+
+# Only humans
+base_filter = Net::LDAP::Filter.eq('objectClass', 'cpsPersonne') | (Net::LDAP::Filter.eq('objectClass', 'cpsStructuralPerson') & Net::LDAP::Filter.ne('objectClass', 'cpsCarteCps'))
+options[:filters].each do |k,v|
+  base_filter &= Net::LDAP::Filter.eq(k, v)
+end
+
+if ARGV.count == 0 then
+  ARGV << '*'
+end
+
+ARGV.each do |cn|
+  filter = base_filter & Net::LDAP::Filter.eq('cn', cn)
+  ldap.search(filter: filter) do |entry|
+    cert = OpenSSL::X509::Certificate.new(entry['certauth;binary'].first)
+    valid = trust_store.verify(cert)
+
+    id = "#{entry['givenName'].first} #{entry['sn'].first}"
+
+    if valid then
+      successes += 1
+    else
+      failures += 1
+    end
+
+    status = {
+      true  => '  OK  ',
+      false => ' FAIL ',
+    }
+
+    puts "[%s] %s %s" % [status[valid], id, valid ? '': "(#{trust_store.error_string})"]
+  end
+end
+
+rate = if successes + failures > 0 then
+         100*successes/(successes + failures)
+       else
+         0
+       end
+puts "#{successes} successes, #{failures} failures (#{rate}% success rate)"
