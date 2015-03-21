@@ -52,6 +52,34 @@ if ARGV.count == 0 then
   ARGV << '*'
 end
 
+OpenSSL::OPENSSL_VERSION =~ /OpenSSL (\d+.\d+.\d+)(\w*)(-\w+)? \d{2} \w{3} \d{4}/
+status = if $~ then
+           case $1
+           when '0.9.8' then
+             if $2 == '' || $2 < 'zd' then
+               'Expected to be unaffected'
+             else
+               'Expected to be AFFECTED'
+             end
+           when '1.0.0' then
+             if $2 == '' || $2 < 'p' then
+               'Expected to be unaffected'
+             else
+               'Expected to be AFFECTED'
+             end
+           when '1.0.1' then
+             if $2 == '' || $2 < 'k' then
+               'Expected to be unaffected'
+             else
+               'Expected to be AFFECTED'
+             end
+           end
+         else
+           'Unknown'
+         end
+
+puts "Using #{OpenSSL::OPENSSL_VERSION} (#{status})"
+
 status = {
   true  => '  OK  ',
   false => ' FAIL ',
