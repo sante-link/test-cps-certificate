@@ -4,7 +4,7 @@
 
 ~~~
 % ./test-cps-certificate -h
-Usage: ./test-cps-certificate [options] CN...
+Usage: ./test-cps-certificate [options] [CN...]
 
 Available options:
     -t, --test                       Search and fetch certificates from the TEST directory

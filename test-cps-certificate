@@ -18,7 +18,7 @@ ldap_options = {
 }
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: #{$0} [options] CN..."
+  opts.banner = "Usage: #{$0} [options] [CN...]"
 
   opts.separator('')
   opts.separator('Available options:')
