@@ -74,9 +74,8 @@ status = if $~ then
                'Expected to be AFFECTED'
              end
            end
-         else
-           'Unknown'
          end
+status ||= 'Unknown'
 
 puts "Using #{OpenSSL::OPENSSL_VERSION} (#{status})"
 
