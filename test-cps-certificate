@@ -73,6 +73,8 @@ status = if $~ then
              else
                'Expected to be AFFECTED'
              end
+           when '1.0.2' then
+             'Expected to be AFFECTED'
            end
          end
 status ||= 'Unknown'
